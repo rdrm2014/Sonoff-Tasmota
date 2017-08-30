@@ -1,4 +1,167 @@
-/* 5.1.0 20170513
+/* 5.6.1h
+ * Add PulseTime to power check at startup (#526)
+ *
+ * 5.6.1g
+ * Add power check at startup (#526)
+ * Add duplicate check to received RF signal within 2 seconds for Sonoff Bridge (#810)
+ *
+ * 5.6.1f
+ * Fix JSON error (#786)
+ * Revert changes from 5.6.1e but extent HLW power timer to 10 seconds (#796)
+ *
+ * 5.6.1e
+ * Remove Sonoff Pow HLW power timer to enable low power readings. Unstable below 3W due to used hardware. (#759)
+ *
+ * 5.6.1d
+ * Fix settings order during startup to allow for displaying debug messages
+ * Add more Sonoff Pow range checking (#772)
+ *
+ * 5.6.1c
+ * Add more precision to Sonoff Pow period and power results using command WattRes 0|1 (#759)
+ *
+ * 5.6.1b
+ * Add Supla Espablo support (#755)
+ *
+ * 5.6.1a
+ * Shrink module configuration webpage
+ *
+ * 5.6.1 20170818
+ * Change module list order in webpage
+ * Fix Sonoff T1 1CH and 2CH configuration (#751)
+ *
+ * 5.6.0 20170818
+ * Fix Sonoff Pow intermittent exception 0
+ * Change Sonoff Pow sending Domoticz telemetry data only
+ * Add Ai-Thinker RGBW led (AiLight) (experimental)
+ * Add NeoPixelBus library to Sonoff Led for Hue support
+ * Add user configurable GPIO4 and GPIO5 to module Sonoff Bridge
+ * Add Sonoff B1 RGBCW led support with command Color RRGGBBCCWW (#676)
+ * Add command CT 152..500 to Sonoff Led and Sonoff B1 to control Color Temperature
+ * Add Cold-Warm slider to web page for Sonoff Led and Sonoff B1
+ * Add CT parameter to Hue
+ * Add Sonoff T1 support (#582)
+ * Add AnalogInput0 if configured as Analog Input to webpage (#697, #746)
+ * Add command SetOption14 0|1 to enable interlock mode (#719, #721)
+ * Fix Mitsubishi HVAC IR power controll (#740)
+ *
+ * 5.5.2 20170808
+ * Extent max number of WS2812 pixels from 256 to 512 (#667)
+ * Add OTA handling if server responds with no update available (#695)
+ * Removed undocumented command FlashMode (#696)
+ * Fix compile time error message due to increased message buffer size (#703)
+ *
+ * 5.5.1 20170805
+ * Fix Sonoff Rf Bridge issues
+ * Add Sonoff RF Bridge MQTT messages on received and learned RF signal
+ * Add command VoltRes 0|1 to select voltage resolution to 0.1 V (#654)
+ * Add averaging to Analog input (#686)
+ * Add Energy tele data on Sonoff Pow Threshold change (#688)
+ * Fix inconsistent property names in Messages (#690)
+ *
+ * 5.5.0 20170730
+ * Reduce code space by removing the following commands as they are replaced by SetOption alternatives:
+ *   SaveState = SetOption0
+ *   ButtonRestrict = SetOption1
+ *   Units = SetOption2
+ *   MQTT = SetOption3
+ *   MQTTResponse = SetOption4
+ *   TempUnit = SetOption8
+ * Smoothing WS2812 animation poll, invert fade speed and max allowed wakeup time down to 3000 seconds
+ * Fix initial button press detection
+ * Add support for Sonoff RF Bridge 433 using command RfKey
+ * Fix regression from 5.0.7 by increasing message buffer size from 360 to 368 to accomodate 4 x DS18x20 sensors (#637)
+ * Add GroupTopic to Topic test when using ButtonTopic/SwitchTopic to send either ON/OFF or TOGGLE (#642)
+ * Adjust HLW calibration limits to accomodate HuaFan device and add commands HlwPSet, HlwUSet and HlwISet (#654)
+ *
+ * 5.4.0 20170725
+ * Fix command reset regression introduced in 5.2.0
+ * Increase polling from 0.1 second to 0.05 second
+ * Add multipress to all buttons
+ * Fix button 1 double press behaviour on multi relay devices
+ * Add support for Hua Fan Smart Socket (#479)
+ * Add support for Sonoff 4ch Pro (#565)
+ * Add command SetOption13 1 to allow immediate action on single button press 
+ *   (disables multipress, hold and unrestricted commands) (#587)
+ *
+ * 5.3.0 20170715
+ * Major Hue rewrite which might introduce Alexa problems. If so, initiate an issue
+ * Add support for Sonoff Led and BN-SZ01 Ceiling Led brightness control to Hue
+ * Fix Sonoff Led Power, Dimmer and Color MQTT response (#176)
+ * Add commands Delay and Backlog to allow multiple commands at once separated by ";" (#593)
+ * Use default flashmode DOUT to solve restart hangs on esp8285 chips (#453, #598)
+ * Change Web console column width from 99 to 300 (#599)
+ *
+ * 5.2.4 20170703
+ * Removed flash mode update after selecting different module solving esp8285 related problems
+ * Add device type flag to sonoff_template.ino
+ * Change Sonoff Led Wakeup and add support for Sonoff BN-SZ01 Led (#567)
+ *
+ * 5.2.3 20170630
+ * Change Sonoff Led color conversion code
+ * Fix SetOption12 handling
+ * Simplify auto configuration upgrade
+ * Add option Upgrade <version_number> to only upgrade to any higher version (Old PR #213)
+ * Change FallbackTopic to cmnd/<MQTTClient>/<command> <parameter> bypassing FullTopic and Prefix (#538)
+ *
+ * 5.2.2 20170625
+ * Add configuration SaveAddress to Status 1 and Information Page
+ * Change Sonoff Led Color conversion from AtoH to strtol
+ * Fix possible wrong uploads due to configuration overwrites (#542)
+ * Fix payload negative numbers (#547)
+ *
+ * 5.2.1 20170622
+ * Fix Restore Configuration in case of lower version
+ * Revert auto configuration upgrade allowing easy upgrade which was removed in version 5.2.0 
+ * Fix config auto upgrade from versions below version 4.1.1 (#530)
+ *
+ * 5.2.0 20170619
+ * Add command SetOption12 1 to disable newly released configuration flash rotate to reduce flash wear
+ * Fix command CounterDebounce by removing test for active GPIO (#524)
+ * Add command SetOption33 1..250 to allow user configure POW Max_Power_Retry count (#525)
+ *
+ * 5.1.7 20170616
+ * Prep removal of SetOptions alternatives
+ * Restore webpage upgrade error messages removed in 5.1.5
+ * Add hold button functionality to buttons 2 to 4
+ * Add command SetOption32 1..100 to set Key Hold Time from 0.1 seconds to 10 seconds (#200)
+ * Allow slashes in Topic, GroupTopic, ButtonTopic and SwitchTopic (#507)
+ * Changed webpage form actions from post to get and use relative path url (#434, #522)
+ *
+ * 5.1.6 20170606
+ * Shrink code
+ * Removed online configuration of Domoticz In and Domoticz Out MQTT strings
+ * Removed commands DomoticzInTopic and DomoticzOutTopic
+ * Add define KEY_HOLD_TIME to configure button hold threshold before sending MQTT Hold message
+ * Add command StateText4 to configure button MQTT Hold text (= MQTT_CMND_HOLD)
+ * Add command SetOption11 0|1 to swap pushbutton single and double press functionality (#200)
+ * Add command SwitchMode<x> 5 (PUSHBUTTONHOLD) and 6 (PUSHBUTTONHOLD_INV) (#489)
+ *
+ * 5.1.5 20170604
+ * Shrink code in preparation to ESP8266-Arduino 2.4.0-rc1
+ * Add effect parameter to HUE Device (#464)
+ *
+ * 5.1.4 20170601
+ * Removed pre-compiled versions from repository as they are available within the release
+ * Changed HUE Device type to color supporting version (#464)
+ * Fix compile error when BE_MINIMAL is selected (#467, #476)
+ * Add multiple compiled versions to release using updated Travis script and platformio.ini (#467)
+ *
+ * 5.1.3 20170520
+ * Add Domoticz Counter
+ *
+ * 5.1.2 20170519
+ * Fix Counter/Timer JSON message and update Counter/Timer on webpage
+ * Fix WS2812 Domoticz related regression issues
+ *
+ * 5.1.1 20170517
+ * Allow command FullTopic in group mode
+ * Prepare for more use of RTC memory
+ * Add independant WS2812 led string power control (#386, #390)
+ * Add command Counter<x> to control up to four GPIO falling edge interrupt counters or timers (#459)
+ * Add command CounterType<x> to select between pulse counting or pulse timing
+ * Add command CounterDebounce to select global counter debounce time in mSec
+ *
+ * 5.1.0 20170513
  * Fix Offline/Removal of retained topic when FullTopic is changed
  * Add FullTopic to MQTT Configuration and Information web pages
  * Add license model GPLv3 (#188)

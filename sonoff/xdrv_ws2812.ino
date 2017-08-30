@@ -22,7 +22,7 @@
  * WS2812 Leds using NeopixelBus library
 \*********************************************************************************************/
 
-#include <NeoPixelBus.h>
+//#include <NeoPixelBus.h>  // Global defined as also used by Sonoff Led
 
 #ifdef USE_WS2812_DMA
 #if (USE_WS2812_CTYPE == 1)
@@ -76,37 +76,20 @@ uint8_t repeatValues[5] = {
     2,     // Largest
     1 };   // All
 uint8_t speedValues[6] = { 
-    0,     // None
-   18,     // Slowest
-   14,     // Slower
-   10,     // Slow
-    6,     // Fast
-    2 };   // Fastest
-/*
-uint8_t ledTable[] = {
-    0,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,
-    1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,
-    1,  2,  2,  2,  2,  2,  2,  2,  2,  3,  3,  3,  3,  3,  4,  4,
-    4,  4,  4,  5,  5,  5,  5,  6,  6,  6,  6,  7,  7,  7,  7,  8,
-    8,  8,  9,  9,  9, 10, 10, 10, 11, 11, 12, 12, 12, 13, 13, 14,
-   14, 15, 15, 15, 16, 16, 17, 17, 18, 18, 19, 19, 20, 20, 21, 22,
-   22, 23, 23, 24, 25, 25, 26, 26, 27, 28, 28, 29, 30, 30, 31, 32,
-   33, 33, 34, 35, 36, 36, 37, 38, 39, 40, 40, 41, 42, 43, 44, 45,
-   46, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60,
-   61, 62, 63, 64, 65, 67, 68, 69, 70, 71, 72, 73, 75, 76, 77, 78,
-   80, 81, 82, 83, 85, 86, 87, 89, 90, 91, 93, 94, 95, 97, 98, 99,
-  101,102,104,105,107,108,110,111,113,114,116,117,119,121,122,124,
-  125,127,129,130,132,134,135,137,139,141,142,144,146,148,150,151,
-  153,155,157,159,161,163,165,166,168,170,172,174,176,178,180,182,
-  184,186,189,191,193,195,197,199,201,204,206,208,210,212,215,217,
-  219,221,224,226,228,231,233,235,238,240,243,245,248,250,253,255 };
-*/
+    0,                     // None
+    9 * (STATES / 10),     // Slowest
+    7 * (STATES / 10),     // Slower
+    5 * (STATES / 10),     // Slow
+    3 * (STATES / 10),     // Fast
+    1 * (STATES / 10) };   // Fastest
+
 uint8_t lany = 0;
 RgbColor dcolor;
 RgbColor tcolor;
 RgbColor lcolor;
 
 uint8_t wakeupDimmer = 0;
+uint8_t ws_bit = 0;
 uint16_t wakeupCntr = 0;
 unsigned long stripTimerCntr = 0;  // Bars and Gradient
 
@@ -160,37 +143,6 @@ void ws2812_setColor(uint16_t led, char* colstr)
       lany = 1;
     }
   }
-}
-
-void ws2812_replaceHSB(String *response)
-{
-  ws2812_setDim(sysCfg.ws_dimmer);
-  HsbColor hsb = HsbColor(dcolor);
-  response->replace("{h}", String((uint16_t)(65535.0f * hsb.H)));
-  response->replace("{s}", String((uint8_t)(254.0f * hsb.S)));
-  response->replace("{b}", String((uint8_t)(254.0f * hsb.B)));
-}
-
-void ws2812_getHSB(float *hue, float *sat, float *bri)
-{
-  ws2812_setDim(sysCfg.ws_dimmer);
-  HsbColor hsb = HsbColor(dcolor);
-  *hue = hsb.H;
-  *sat = hsb.S;
-  *bri = hsb.B;
-}
-
-void ws2812_setHSB(float hue, float sat, float bri)
-{
-  char rgb[7];
-  
-  HsbColor hsb;
-  hsb.H = hue;
-  hsb.S = sat;
-  hsb.B = bri;
-  RgbColor tmp = RgbColor(hsb);
-  sprintf(rgb,"%02X%02X%02X", tmp.R, tmp.G, tmp.B);
-  ws2812_setColor(0,rgb);
 }
 
 void ws2812_getColor(uint16_t led, char* svalue, uint16_t ssvalue)
@@ -276,18 +228,18 @@ void ws2812_clock()
   ws2812_stripShow();
 }
 
-void ws2812_gradientColor(struct wsColor* mColor, uint8_t range, uint8_t gradRange, uint8_t i)
+void ws2812_gradientColor(struct wsColor* mColor, uint16_t range, uint16_t gradRange, uint16_t i)
 {
 /*
  * Compute the color of a pixel at position i using a gradient of the color scheme.
  * This function is used internally by the gradient function.
  */
   ColorScheme scheme = schemes[sysCfg.ws_scheme -3];
-  uint8_t curRange = i / range;
-  uint8_t rangeIndex = i % range;
-  uint8_t colorIndex = rangeIndex / gradRange;
-  uint8_t start = colorIndex;
-  uint8_t end = colorIndex +1;
+  uint16_t curRange = i / range;
+  uint16_t rangeIndex = i % range;
+  uint16_t colorIndex = rangeIndex / gradRange;
+  uint16_t start = colorIndex;
+  uint16_t end = colorIndex +1;
   if (curRange % 2 != 0) {
     start = (scheme.count -1) - start;
     end = (scheme.count -1) - end;
@@ -316,9 +268,9 @@ void ws2812_gradient()
   }
 
   uint8_t repeat = repeatValues[sysCfg.ws_width];  // number of scheme.count per ledcount
-  uint8_t range = (uint8_t)ceil((float)sysCfg.ws_pixels / (float)repeat);
-  uint8_t gradRange = (uint8_t)ceil((float)range / (float)(scheme.count - 1));
-  uint8_t offset = speedValues[sysCfg.ws_speed] > 0 ? stripTimerCntr / speedValues[sysCfg.ws_speed] : 0;
+  uint16_t range = (uint16_t)ceil((float)sysCfg.ws_pixels / (float)repeat);
+  uint16_t gradRange = (uint16_t)ceil((float)range / (float)(scheme.count - 1));
+  uint16_t offset = speedValues[sysCfg.ws_speed] > 0 ? stripTimerCntr / speedValues[sysCfg.ws_speed] : 0;
 
   wsColor oldColor, currentColor;
   ws2812_gradientColor(&oldColor, range, gradRange, offset);
@@ -357,7 +309,7 @@ void ws2812_bars()
 
   ColorScheme scheme = schemes[sysCfg.ws_scheme -3];
 
-  uint8_t maxSize = sysCfg.ws_pixels / scheme.count;
+  uint16_t maxSize = sysCfg.ws_pixels / scheme.count;
   if (widthValues[sysCfg.ws_width] > maxSize) {
     maxSize = 0;
   }
@@ -394,7 +346,7 @@ void ws2812_animate()
   uint8_t fadeValue;
   
   stripTimerCntr++;
-  if (0 == power) {  // Power Off
+  if (0 == bitRead(power, ws_bit)) {  // Power Off
     sleep = sysCfg.sleep;
     stripTimerCntr = 0;
     tcolor = 0;
@@ -408,23 +360,24 @@ void ws2812_animate()
           tcolor = dcolor;
         } else {
           if (tcolor != dcolor) {
+            uint8_t ws_speed = speedValues[sysCfg.ws_speed];
             if (tcolor.R < dcolor.R) {
-              tcolor.R += ((dcolor.R - tcolor.R) >> sysCfg.ws_speed) +1;
+              tcolor.R += ((dcolor.R - tcolor.R) / ws_speed) +1;
             }
             if (tcolor.G < dcolor.G) {
-              tcolor.G += ((dcolor.G - tcolor.G) >> sysCfg.ws_speed) +1;
+              tcolor.G += ((dcolor.G - tcolor.G) / ws_speed) +1;
             }
             if (tcolor.B < dcolor.B) {
-              tcolor.B += ((dcolor.B - tcolor.B) >> sysCfg.ws_speed) +1;
+              tcolor.B += ((dcolor.B - tcolor.B) / ws_speed) +1;
             }
             if (tcolor.R > dcolor.R) {
-              tcolor.R -= ((tcolor.R - dcolor.R) >> sysCfg.ws_speed) +1;
+              tcolor.R -= ((tcolor.R - dcolor.R) / ws_speed) +1;
             }
             if (tcolor.G > dcolor.G) {
-              tcolor.G -= ((tcolor.G - dcolor.G) >> sysCfg.ws_speed) +1;
+              tcolor.G -= ((tcolor.G - dcolor.G) / ws_speed) +1;
             }
             if (tcolor.B > dcolor.B) {
-              tcolor.B -= ((tcolor.B - dcolor.B) >> sysCfg.ws_speed) +1;
+              tcolor.B -= ((tcolor.B - dcolor.B) / ws_speed) +1;
             }
           }
         }
@@ -442,8 +395,9 @@ void ws2812_animate()
             if (wakeupDimmer <= sysCfg.ws_dimmer) {
               ws2812_setDim(wakeupDimmer);
               tcolor = dcolor;
-            } else
+            } else {
               sysCfg.ws_scheme = 0;
+            }
           }
         }
         break;
@@ -464,7 +418,7 @@ void ws2812_animate()
     }
   }
 
-  if ((sysCfg.ws_scheme <= 1) || (!(power &1))) {
+  if ((sysCfg.ws_scheme <= 1) || (0 == bitRead(power, ws_bit))) {
     if ((lcolor != tcolor) || lany) {
       lany = 0;
       lcolor = tcolor;
@@ -499,8 +453,9 @@ void ws2812_pixels()
   lany = 1;
 }
 
-void ws2812_init()
+void ws2812_init(uint8_t powerbit)
 {
+  ws_bit = powerbit -1;
 #ifdef USE_WS2812_DMA
 #if (USE_WS2812_CTYPE == 1)
   strip = new NeoPixelBus<NeoGrbFeature, Neo800KbpsMethod>(WS2812_MAX_LEDS);  // For Esp8266, the Pin is omitted and it uses GPIO3 due to DMA hardware use.
@@ -519,6 +474,41 @@ void ws2812_init()
 }
 
 /*********************************************************************************************\
+ * Hue support
+\*********************************************************************************************/
+
+void ws2812_replaceHSB(String *response)
+{
+  ws2812_setDim(sysCfg.ws_dimmer);
+  HsbColor hsb = HsbColor(dcolor);
+  response->replace("{h}", String((uint16_t)(65535.0f * hsb.H)));
+  response->replace("{s}", String((uint8_t)(254.0f * hsb.S)));
+  response->replace("{b}", String((uint8_t)(254.0f * hsb.B)));
+}
+
+void ws2812_getHSB(float *hue, float *sat, float *bri)
+{
+  ws2812_setDim(sysCfg.ws_dimmer);
+  HsbColor hsb = HsbColor(dcolor);
+  *hue = hsb.H;
+  *sat = hsb.S;
+  *bri = hsb.B;
+}
+
+void ws2812_setHSB(float hue, float sat, float bri)
+{
+  char rgb[7];
+  
+  HsbColor hsb;
+  hsb.H = hue;
+  hsb.S = sat;
+  hsb.B = bri;
+  RgbColor tmp = RgbColor(hsb);
+  sprintf(rgb,"%02X%02X%02X", tmp.R, tmp.G, tmp.B);
+  ws2812_setColor(0,rgb);
+}
+
+/*********************************************************************************************\
  * Commands
 \*********************************************************************************************/
 
@@ -527,7 +517,7 @@ boolean ws2812_command(char *type, uint16_t index, char *dataBuf, uint16_t data_
   boolean serviced = true;
 
   if (!strcmp_P(type,PSTR("PIXELS"))) {
-    if ((data_len > 0) && (payload > 0) && (payload <= WS2812_MAX_LEDS)) {
+    if ((payload > 0) && (payload <= WS2812_MAX_LEDS)) {
       sysCfg.ws_pixels = payload;
       ws2812_pixels();
     }
@@ -535,31 +525,30 @@ boolean ws2812_command(char *type, uint16_t index, char *dataBuf, uint16_t data_
   }
   else if (!strcmp_P(type,PSTR("LED")) && (index > 0) && (index <= sysCfg.ws_pixels)) {
     if (6 == data_len) {
-//       ws2812_setColor(index, dataBufUc);
       ws2812_setColor(index, dataBuf);
     }
     ws2812_getColor(index, svalue, ssvalue);
   }
   else if (!strcmp_P(type,PSTR("COLOR"))) {
     if (6 == data_len) {
-//        ws2812_setColor(0, dataBufUc);
       ws2812_setColor(0, dataBuf);
-      power = 1;
+      bitSet(power, ws_bit);
     }
     ws2812_getColor(0, svalue, ssvalue);
   }
   else if (!strcmp_P(type,PSTR("DIMMER"))) {
-    if ((data_len > 0) && (payload >= 0) && (payload <= 100)) {
+    if ((payload >= 0) && (payload <= 100)) {
       sysCfg.ws_dimmer = payload;
-      power = 1;
+      bitSet(power, ws_bit);
 #ifdef USE_DOMOTICZ
-      mqtt_publishDomoticzPowerState(index);
+//      mqtt_publishDomoticzPowerState(index);
+      mqtt_publishDomoticzPowerState(ws_bit +1);
 #endif  // USE_DOMOTICZ
     }
     snprintf_P(svalue, ssvalue, PSTR("{\"Dimmer\":%d}"), sysCfg.ws_dimmer);
   }
   else if (!strcmp_P(type,PSTR("LEDTABLE"))) {
-    if ((data_len > 0) && (payload >= 0) && (payload <= 2)) {
+    if ((payload >= 0) && (payload <= 2)) {
       switch (payload) {
       case 0: // Off
       case 1: // On
@@ -574,33 +563,31 @@ boolean ws2812_command(char *type, uint16_t index, char *dataBuf, uint16_t data_
     snprintf_P(svalue, ssvalue, PSTR("{\"LedTable\":\"%s\"}"), getStateText(sysCfg.ws_ledtable));
   }
   else if (!strcmp_P(type,PSTR("FADE"))) {
-    if ((data_len > 0) && (payload >= 0) && (payload <= 2)) {
-      switch (payload) {
-      case 0: // Off
-      case 1: // On
-        sysCfg.ws_fade = payload;
-        break;
-      case 2: // Toggle
-        sysCfg.ws_fade ^= 1;
-        break;
-      }
+    switch (payload) {
+    case 0: // Off
+    case 1: // On
+      sysCfg.ws_fade = payload;
+      break;
+    case 2: // Toggle
+      sysCfg.ws_fade ^= 1;
+      break;
     }
     snprintf_P(svalue, ssvalue, PSTR("{\"Fade\":\"%s\"}"), getStateText(sysCfg.ws_fade));
   }
   else if (!strcmp_P(type,PSTR("SPEED"))) {  // 1 - fast, 5 - slow
-    if ((data_len > 0) && (payload > 0) && (payload <= 5)) {
+    if ((payload > 0) && (payload <= 5)) {
       sysCfg.ws_speed = payload;
     }
     snprintf_P(svalue, ssvalue, PSTR("{\"Speed\":%d}"), sysCfg.ws_speed);
   }
   else if (!strcmp_P(type,PSTR("WIDTH"))) {
-    if ((data_len > 0) && (payload >= 0) && (payload <= 4)) {
+    if ((payload >= 0) && (payload <= 4)) {
       sysCfg.ws_width = payload;
     }
     snprintf_P(svalue, ssvalue, PSTR("{\"Width\":%d}"), sysCfg.ws_width);
   }
   else if (!strcmp_P(type,PSTR("WAKEUP"))) {
-    if ((data_len > 0) && (payload > 0) && (payload < 3601)) {
+    if ((payload > 0) && (payload < 3001)) {
       sysCfg.ws_wakeup = payload;
       if (1 == sysCfg.ws_scheme) {
         sysCfg.ws_scheme = 0;
@@ -609,15 +596,29 @@ boolean ws2812_command(char *type, uint16_t index, char *dataBuf, uint16_t data_
     snprintf_P(svalue, ssvalue, PSTR("{\"WakeUp\":%d}"), sysCfg.ws_wakeup);
   }
   else if (!strcmp_P(type,PSTR("SCHEME"))) {
-    if ((data_len > 0) && (payload >= 0) && (payload <= 9)) {
+    if ((payload >= 0) && (payload <= 9)) {
       sysCfg.ws_scheme = payload;
       if (1 == sysCfg.ws_scheme) {
         ws2812_resetWakupState();
       }
-      power = 1;
+      bitSet(power, ws_bit);
       ws2812_resetStripTimer();
     }
     snprintf_P(svalue, ssvalue, PSTR("{\"Scheme\":%d}"), sysCfg.ws_scheme);
+  }
+  else if (!strcmp_P(type,PSTR("UNDOCA"))) {  // Theos WS2812 legacy status
+    RgbColor mcolor;
+    char mtopic[TOPSZ];
+    getTopic_P(mtopic, 1, sysCfg.mqtt_topic, type);
+    ws2812_setDim(sysCfg.ws_dimmer);
+    mcolor = dcolor;
+    uint32_t color = (uint32_t)mcolor.R << 16;
+    color += (uint32_t)mcolor.G << 8;
+    color += (uint32_t)mcolor.B;
+    snprintf_P(svalue, ssvalue, PSTR("%06X, %d, %d, %d, %d, %d"),
+      color, sysCfg.ws_fade, sysCfg.ws_ledtable, sysCfg.ws_scheme, sysCfg.ws_speed, sysCfg.ws_width);
+    mqtt_publish(mtopic, svalue);
+    svalue[0] = '\0';
   }
   else {
     serviced = false;  // Unknown command
