@@ -1,29 +1,35 @@
-/* 5.6.1h
- * Add PulseTime to power check at startup (#526)
+/* 5.7.1c
+ * Allow LogPort and MqttPort up to 65535 and add LogPort tot Status 3 (#859)
  *
- * 5.6.1g
- * Add power check at startup (#526)
- * Add duplicate check to received RF signal within 2 seconds for Sonoff Bridge (#810)
+ * 5.7.1b
+ * Add timeout to DHT and DS18B20 sensors (#852)
  *
- * 5.6.1f
- * Fix JSON error (#786)
- * Revert changes from 5.6.1e but extent HLW power timer to 10 seconds (#796)
+ * 5.7.1a
+ * Fix Domoticz loop when Emulation is selected
+ * Add GPIO14 to Sonoff Dual (#797, #839)
+ * Add support for Witty Cloud (#794)
+ * Add support for Yunshan Wifi Relay (#802)
+ * Add GPIO16 input pulldown (#827)
  *
- * 5.6.1e
- * Remove Sonoff Pow HLW power timer to enable low power readings. Unstable below 3W due to used hardware. (#759)
+ * 5.7.1 20170909
+ * Remove leading spaces from MQTT data
+ * Fix webconsole special character entry
+ * Allow # as prefix for color value
+ * Fix Alexa detection and Hue App Update Request (#698, #854)
  *
- * 5.6.1d
- * Fix settings order during startup to allow for displaying debug messages
- * Add more Sonoff Pow range checking (#772)
- *
- * 5.6.1c
- * Add more precision to Sonoff Pow period and power results using command WattRes 0|1 (#759)
- *
- * 5.6.1b
- * Add Supla Espablo support (#755)
- *
- * 5.6.1a
+ * 5.7.0 20170907
  * Shrink module configuration webpage
+ * Fix settings order during startup to allow for displaying debug messages
+ * Fix some string length issues
+ * Add more string length tests by using strncpy
+ * Add Ai-Thinker RGBW led (AiLight)
+ * Add Power check and add PulseTime to power check at startup (#526)
+ * Add Supla Espablo support (#755)
+ * Add more precision to Sonoff Pow period and power results using command WattRes 0|1 (#759)
+ * Add basic internationalization and localization (#763)
+ * Add more Sonoff Pow range checking (#772)
+ * Fix invalid JSON (#786, #822)
+ * Add duplicate check to received RF signal within 2 seconds for Sonoff Bridge (#810)
  *
  * 5.6.1 20170818
  * Change module list order in webpage
@@ -80,7 +86,7 @@
  * Fix button 1 double press behaviour on multi relay devices
  * Add support for Hua Fan Smart Socket (#479)
  * Add support for Sonoff 4ch Pro (#565)
- * Add command SetOption13 1 to allow immediate action on single button press 
+ * Add command SetOption13 1 to allow immediate action on single button press
  *   (disables multipress, hold and unrestricted commands) (#587)
  *
  * 5.3.0 20170715
@@ -111,7 +117,7 @@
  *
  * 5.2.1 20170622
  * Fix Restore Configuration in case of lower version
- * Revert auto configuration upgrade allowing easy upgrade which was removed in version 5.2.0 
+ * Revert auto configuration upgrade allowing easy upgrade which was removed in version 5.2.0
  * Fix config auto upgrade from versions below version 4.1.1 (#530)
  *
  * 5.2.0 20170619
@@ -180,7 +186,7 @@
  * Add command MqttRetry <seconds> to change default MQTT reconnect retry timer from minimal 10 seconds (#429)
  *
  * 5.0.5 20170508
- * Add command FullTopic with tokens %topic% (replaced by command Topic value) and 
+ * Add command FullTopic with tokens %topic% (replaced by command Topic value) and
  *  %prefix% (replaced by command Prefix<x> values) for more flexible topic definitions (#244)
  *  See wiki > MQTT Features https://github.com/arendst/Sonoff-Tasmota/wiki/MQTT-Features for more information
  *
@@ -255,7 +261,7 @@
  * Remove restart after IPAddress changes (#292)
  * Add support for MAX31850 in xsns_ds18x20.ino (#295)
  * Fix possible uptime update misses (#302)
- * 
+ *
  * 4.1.0 20170325
  * Change static IP addresses in user_config.h from list (using commas) to string (using dots)
  * Unify display result of commands Modules, Module and Gpios
@@ -354,7 +360,7 @@
  * 3.9.20 20170221
  * Add minimal basic authentication to Web Admin mode (#87)
  * Fix Hue and add HSB support (#89)
- * 
+ *
  * 3.9.19 20170219
  * Sonoff Led: Made GPIO04, 05 and 15 available for user
  * Sonoff Led: Add commands Fade, Speed, WakupDuration, Wakeup and LedTable
@@ -364,7 +370,7 @@
  * Fix Sonoff Led dimmer range (#16)
  * Change Sonoff Led command Dimmer to act on both cold and warm color
  * Add Sonoff Led command Color CCWW where CCWW are hexadecimal values fro 00 - FF
- * Reduce Sonoff Led flickering by disabling interrupts during flash save and disabling 
+ * Reduce Sonoff Led flickering by disabling interrupts during flash save and disabling
  *   Led during OTA upgrade and Web upload (#16)
  *
  * 3.9.17 20170217
@@ -435,7 +441,7 @@
  *
  * 3.9.3 20170127
  * Add confirmation before Restart via webpage
- * Expand Domoticz Configuration webpage with Key, Switch and Sensor Index and 
+ * Expand Domoticz Configuration webpage with Key, Switch and Sensor Index and
  *   add commands DomoticzSwitchIdx and DomoticzSensorIdx (#86) (#174) (#219)
  * Fix default DHT11 sensor driver selection
  * Fix LedPower status after button press (#279)
@@ -498,7 +504,7 @@
  * Add friendlyname to webpage replacing former hostname
  *
  * 3.1.15 20170108
- * Fix Domoticz send key regression with Toggle command  
+ * Fix Domoticz send key regression with Toggle command
  *
  * 3.1.14 20170107
  * Add support for command TOGGLE (define MQTT_CMND_TOGGLE) when ButtonTopic is in use and not equal to Topic (#207)
