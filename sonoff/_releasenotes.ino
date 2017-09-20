@@ -1,4 +1,36 @@
-/* 5.7.1c
+/* 5.7.1j
+ * Remove the need for NeoPixelBus library for Hue support
+ * Reintroduce xdrv_ws2812 for flexible future library changes
+ * Fix basic On, Off, Toggle, Blink and BlinkOff commands when other language is selected (#874)
+ *
+ * 5.7.1i
+ * Add blink to WS2812 and Sonoff Led (#643)
+ *
+ * 5.7.1h
+ * Consolidate WS2812 (xdrv_ws2812) into Sonoff Led (xdrv_snfled)
+ * Invert WS2812 fade speed to align with Sonoff led (Speed 1 = fast, Speed 8 = slow)
+ * Remove upper case MQTT receive buffer
+ *
+ * 5.7.1g
+ * Add option WIFI_WAIT (5) to command WifiConfig to allow connection retry to same AP without restart or update flash (#772, #869)
+ *
+ * 5.7.1f
+ * Reduce code and string length for output of commands Modules and GPIOs
+ * Add optional dimmer parameter to command Wakeup for AiLight, Sonoff B1, Led and BN-SZ01 (#867)
+ *
+ * 5.7.1e
+ * Add Sonoff SC debug information
+ * Change syslog service
+ *
+ * 5.7.1d
+ * Fix watchdog timeout caused by lack of stack space by now using global buffers (#853)
+ * Removed webserver syslog disable as now no longer needed
+ * Increased default MQTT message size from 368 to 405 bytes while keeping MQTT_MAX_PACKET_SIZE = 512 (because we can)
+ * Fix MQTT Offline or Remove MQTT retained topic code
+ * Allow command SwitchTopic in group mode (#861)
+ * Allow command SwitchMode if no switches are defined (#861)
+ *
+ * 5.7.1c
  * Allow LogPort and MqttPort up to 65535 and add LogPort tot Status 3 (#859)
  *
  * 5.7.1b
