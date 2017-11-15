@@ -1,5 +1,5 @@
 /*
-  xdrv_snfsc.ino - sonoff SC support for Sonoff-Tasmota
+  xsns_04_snfsc.ino - sonoff SC support for Sonoff-Tasmota
 
   Copyright (C) 2017  Theo Arends
 
@@ -55,29 +55,29 @@
 
 uint16_t sc_value[5] = { 0 };
 
-void sc_send(const char *data)
+void SonoffScSend(const char *data)
 {
   Serial.write(data);
   Serial.write('\x1B');
   snprintf_P(log_data, sizeof(log_data), PSTR(D_LOG_SERIAL D_TRANSMIT " %s"), data);
-  addLog(LOG_LEVEL_DEBUG);
+  AddLog(LOG_LEVEL_DEBUG);
 }
 
-void sc_init()
+void SonoffScInit()
 {
-//  sc_send("AT+DEVCONFIG=\"uploadFreq\":1800");
-  sc_send("AT+START");
-//  sc_send("AT+STATUS");
+//  SonoffScSend("AT+DEVCONFIG=\"uploadFreq\":1800");
+  SonoffScSend("AT+START");
+//  SonoffScSend("AT+STATUS");
 }
 
-void sc_rcvstat(char *rcvstat)
+void SonoffScSerialInput(char *rcvstat)
 {
   char *p;
   char *str;
   uint16_t value[5] = { 0 };
 
   snprintf_P(log_data, sizeof(log_data), PSTR(D_LOG_SERIAL D_RECEIVED " %s"), rcvstat);
-  addLog(LOG_LEVEL_DEBUG);
+  AddLog(LOG_LEVEL_DEBUG);
 
   if (!strncasecmp_P(rcvstat, PSTR("AT+UPDATE="), 10)) {
     int8_t i = -1;
@@ -91,66 +91,77 @@ void sc_rcvstat(char *rcvstat)
       sc_value[2] = (11 - sc_value[2]) * 10;  // Invert light level
       sc_value[3] *= 10;
       sc_value[4] = (11 - sc_value[4]) * 10;  // Invert dust level
-      sc_send("AT+SEND=ok");
+      SonoffScSend("AT+SEND=ok");
     } else {
-      sc_send("AT+SEND=fail");
+      SonoffScSend("AT+SEND=fail");
     }
   }
   else if (!strcasecmp_P(rcvstat, PSTR("AT+STATUS?"))) {
-    sc_send("AT+STATUS=4");
+    SonoffScSend("AT+STATUS=4");
+  }
+}
+
+/********************************************************************************************/
+
+#ifdef USE_WEBSERVER
+const char HTTP_SNS_SCPLUS[] PROGMEM =
+  "%s{s}" D_LIGHT "{m}%d%{e}{s}" D_NOISE "{m}%d%{e}{s}" D_AIR_QUALITY "{m}%d%{e}";  // {s} = <tr><th>, {m} = </th><td>, {e} = </td></tr>
+#endif  // USE_WEBSERVER
+
+void SonoffScShow(boolean json)
+{
+  if (sc_value[0] > 0) {
+    char temperature[10];
+    char humidity[10];
+
+    float t = ConvertTemp(sc_value[1]);
+    float h = sc_value[0];
+    dtostrfd(t, Settings.flag2.temperature_resolution, temperature);
+    dtostrfd(h, Settings.flag2.humidity_resolution, humidity);
+
+    if (json) {
+      snprintf_P(mqtt_data, sizeof(mqtt_data), PSTR("%s,\"" D_TEMPERATURE "\":%s,\"" D_HUMIDITY "\":%s,\"" D_LIGHT "\":%d,\"" D_NOISE "\":%d,\"" D_AIRQUALITY "\":%d"),
+        mqtt_data, temperature, humidity, sc_value[2], sc_value[3], sc_value[4]);
+#ifdef USE_DOMOTICZ
+      DomoticzTempHumSensor(temperature, humidity);
+      DomoticzSensor(DZ_ILLUMINANCE, sc_value[2]);
+#endif  // USE_DOMOTICZ
+#ifdef USE_WEBSERVER
+    } else {
+      snprintf_P(mqtt_data, sizeof(mqtt_data), HTTP_SNS_TEMP, mqtt_data, "", temperature, TempUnit());
+      snprintf_P(mqtt_data, sizeof(mqtt_data), HTTP_SNS_HUM, mqtt_data, "", humidity);
+      snprintf_P(mqtt_data, sizeof(mqtt_data), HTTP_SNS_SCPLUS, mqtt_data, sc_value[2], sc_value[3], sc_value[4]);
+#endif  // USE_WEBSERVER
+    }
   }
 }
 
 /*********************************************************************************************\
- * Presentation
+ * Interface
 \*********************************************************************************************/
 
-void sc_mqttPresent(uint8_t* djson)
+#define XSNS_04
+
+boolean Xsns04(byte function)
 {
-  if (sc_value[0] > 0) {
-    char stemp1[10];
-    char stemp2[10];
+  boolean result = false;
 
-    float t = convertTemp(sc_value[1]);
-    dtostrfd(t, sysCfg.flag.temperature_resolution, stemp1);
-    float h = sc_value[0];
-    dtostrfd(h, sysCfg.flag.humidity_resolution, stemp2);
-    snprintf_P(mqtt_data, sizeof(mqtt_data), PSTR("%s, \"" D_TEMPERATURE "\":%s, \"" D_HUMIDITY "\":%s, \"" D_LIGHT "\":%d, \"" D_NOISE "\":%d, \"" D_AIRQUALITY "\":%d"),
-      mqtt_data, stemp1, stemp2, sc_value[2], sc_value[3], sc_value[4]);
-    *djson = 1;
-#ifdef USE_DOMOTICZ
-    domoticz_sensor2(stemp1, stemp2);
-    domoticz_sensor5(sc_value[2]);
-#endif  // USE_DOMOTICZ
-  }
-}
-
+  if (SONOFF_SC == Settings.module) {
+    switch (function) {
+      case FUNC_XSNS_INIT:
+        SonoffScInit();
+        break;
+//      case FUNC_XSNS_PREP:
+//        break;
+      case FUNC_XSNS_JSON_APPEND:
+        SonoffScShow(1);
+        break;
 #ifdef USE_WEBSERVER
-String sc_webPresent()
-{
-  String page = "";
-
-  if (sc_value[0] > 0) {
-    char stemp[10];
-    char sensor[80];
-    char scstype[] = "";
-
-    float t = convertTemp(sc_value[1]);
-    dtostrfi(t, sysCfg.flag.temperature_resolution, stemp);
-    snprintf_P(sensor, sizeof(sensor), HTTP_SNS_TEMP, scstype, stemp, tempUnit());
-    page += sensor;
-    float h = sc_value[0];
-    dtostrfi(h, sysCfg.flag.humidity_resolution, stemp);
-    snprintf_P(sensor, sizeof(sensor), HTTP_SNS_HUM, scstype, stemp);
-    page += sensor;
-    snprintf_P(sensor, sizeof(sensor), HTTP_SNS_LIGHT, scstype, sc_value[2]);
-    page += sensor;
-    snprintf_P(sensor, sizeof(sensor), HTTP_SNS_NOISE, scstype, sc_value[3]);
-    page += sensor;
-    snprintf_P(sensor, sizeof(sensor), HTTP_SNS_DUST, scstype, sc_value[4]);
-    page += sensor;
-  }
-  return page;
-}
+      case FUNC_XSNS_WEB:
+        SonoffScShow(0);
+        break;
 #endif  // USE_WEBSERVER
-
+    }
+  }
+  return result;
+}
