@@ -120,7 +120,7 @@ const char HTTP_SCRIPT_CONSOL[] PROGMEM =
           "id=d.getElementsByTagName('i')[0].childNodes[0].nodeValue;"
           "if(d.getElementsByTagName('j')[0].childNodes[0].nodeValue==0){t.value='';}"
           "z=d.getElementsByTagName('l')[0].childNodes;"
-          "if(z.length>0){t.value+=z[0].nodeValue;}"
+          "if(z.length>0){t.value+=decodeURIComponent(z[0].nodeValue);}"
           "t.scrollTop=99999;"
           "sn=t.scrollTop;"
         "}"
@@ -1027,13 +1027,13 @@ snprintf_P(log_data, sizeof(log_data), PSTR(D_LOG_LOG D_CMND_SERIALLOG " %d, " D
     break;
   case 6:
     byte new_module = (!strlen(WebServer->arg("g99").c_str())) ? MODULE : atoi(WebServer->arg("g99").c_str());
-    byte new_modflg = (Settings.module != new_module);
+    Settings.last_module = Settings.module;
     Settings.module = new_module;
     mytmplt cmodule;
     memcpy_P(&cmodule, &kModules[Settings.module], sizeof(cmodule));
     String gpios = "";
     for (byte i = 0; i < MAX_GPIO_PIN; i++) {
-      if (new_modflg) {
+      if (Settings.last_module != new_module) {
         Settings.my_gp.io[i] = 0;
       } else {
         if (GPIO_USER == cmodule.gp.io[i]) {
@@ -1439,7 +1439,11 @@ void HandleAjaxConsoleRefresh()
         } else {
           cflg = 1;
         }
-        message += web_log[counter];
+        String nextline = web_log[counter];
+        nextline.replace(F("<"), F("%3C"));  // XML encoding to fix blank console log in concert with javascript decodeURIComponent
+        nextline.replace(F(">"), F("%3E"));
+        nextline.replace(F("&"), F("%26"));
+        message += nextline;
       }
       counter++;
       if (counter > MAX_LOG_LINES -1) {
